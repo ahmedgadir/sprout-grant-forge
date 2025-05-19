@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
@@ -141,7 +140,7 @@ const GrantDetail: React.FC = () => {
                 </Button>
                 
                 <Button 
-                  onClick={() => navigate(`/apply/${grant.id}`)} 
+                  onClick={() => navigate(`/reports/create/${grant.id}`)} 
                   className="bg-fundsprout-primary hover:bg-fundsprout-dark"
                 >
                   Start Application
