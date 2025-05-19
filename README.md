@@ -1,8 +1,46 @@
-# Welcome to your Lovable project
+
+# Fundsprout - Grant Management Solution
+
+Fundsprout is a comprehensive web application designed to streamline the grant application process for nonprofit organizations. It helps users find, match, apply for, and track grants through an intuitive interface powered by AI-assistance.
 
 ## Project info
 
 **URL**: https://lovable.dev/projects/29b9f9ce-3f02-4fed-8ba1-ee663734644c
+
+## Features Implemented
+
+- **Grant Discovery Dashboard**: View matched grants with key information and metrics
+- **Grant Detail View**: Comprehensive information about each grant opportunity
+- **AI-Powered Application Assistant**: Generate and modify grant application drafts with AI assistance
+- **Match Scoring System**: Algorithm to determine the fit between your organization and available grants
+- **Responsive UI**: Modern interface that works across devices
+
+## Key Files and Components
+
+- **src/pages/Index.tsx**: Main dashboard showing matched grants and recent activity
+- **src/pages/GrantDetail.tsx**: Detailed view of a specific grant with match information
+- **src/pages/ReportCreator.tsx**: AI-assisted grant application editor with side panel for suggestions
+- **src/pages/Applications.tsx**: View and manage in-progress and submitted applications
+- **src/pages/FindGrants.tsx**: Search interface for discovering new grant opportunities
+- **src/pages/Reports.tsx**: View and manage generated reports
+- **src/components/Sidebar.tsx**: Main navigation component
+- **src/components/MatchedGrants.tsx**: Displays grants that match the organization's profile
+- **src/components/RecentActivity.tsx**: Shows recent actions taken in the application
+- **src/utils/mockData.ts**: Contains sample data for development purposes
+
+## Implementation Progress
+
+So far, we have implemented:
+
+1. **RFP Analysis and Auto-Population**: When clicking "Start Application," the system analyzes the Request for Proposal (RFP) and pre-fills application sections with AI-generated content.
+
+2. **AI-Powered Writing Assistant**: The application includes a side panel with AI suggestions to help users write and modify their draft content.
+
+3. **Report Creation Workflow**: A dedicated interface for creating grant applications with AI assistance, including a "Generate AI Draft" button.
+
+4. **Grant Matching**: Algorithm that calculates the percentage match between organizations and grant opportunities.
+
+5. **Grant Detail View**: Comprehensive view of grant information including award amount, deadlines, and match analysis.
 
 ## How can I edit this code?
 
