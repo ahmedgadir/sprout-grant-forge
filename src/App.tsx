@@ -11,6 +11,7 @@ import GrantDetail from "./pages/GrantDetail";
 import CalendarPage from "./pages/Calendar";
 import Organization from "./pages/Organization";
 import Reports from "./pages/Reports";
+import ReportCreator from "./pages/ReportCreator";
 import NotFound from "./pages/NotFound";
 
 // Update the document title
@@ -32,6 +33,8 @@ const App = () => (
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/organization" element={<Organization />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/reports/create/:id" element={<ReportCreator />} />
+          <Route path="/reports/:id" element={<ReportCreator />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

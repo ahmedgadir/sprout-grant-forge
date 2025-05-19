@@ -5,6 +5,8 @@ import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { mockGrants } from '@/utils/mockData';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 const GrantDetail: React.FC = () => {
   const { id } = useParams();
@@ -111,13 +113,23 @@ const GrantDetail: React.FC = () => {
               </div>
             </div>
             
-            <div className="mb-8">
+            <div className="mb-6">
               <h2 className="text-lg font-semibold mb-2">Description</h2>
               <p className="text-gray-700">{grant.description}</p>
               <p className="text-gray-700 mt-4">This grant aims to support organizations that are addressing critical community needs through innovative approaches. The funding can be used for program development, capacity building, and expanding outreach to underserved populations.</p>
             </div>
             
-            <div className="flex justify-end">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-gray-100">
+              <a 
+                href="#" 
+                className="text-fundsprout-primary hover:text-fundsprout-dark flex items-center"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-file-text mr-2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+                View RFP Document
+              </a>
+              
               <Button 
                 onClick={() => navigate(`/apply/${grant.id}`)} 
                 className="bg-fundsprout-primary hover:bg-fundsprout-dark"
