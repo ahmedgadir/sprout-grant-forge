@@ -8,16 +8,16 @@ import RecentActivity from '@/components/RecentActivity';
 
 const Index: React.FC = () => {
   return (
-    <div className="app-container">
+    <div className="app-container flex h-screen overflow-hidden">
       <Sidebar />
       
-      <div className="main-content">
+      <div className="main-content flex-1 flex flex-col overflow-hidden">
         <Navbar />
         
-        <div className="dashboard-container">
+        <div className="dashboard-container p-6 overflow-y-auto">
           <DashboardHeader />
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
             <div className="lg:col-span-2">
               <MatchedGrants />
             </div>

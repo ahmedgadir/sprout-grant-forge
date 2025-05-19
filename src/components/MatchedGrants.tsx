@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { mockGrants } from '../utils/mockData';
 import type { Grant } from '../utils/mockData';
 
@@ -9,6 +10,7 @@ interface MatchedGrantsProps {
 
 const MatchedGrants: React.FC<MatchedGrantsProps> = ({ className }) => {
   const [filterType, setFilterType] = useState<'all' | 'recommended'>('recommended');
+  const navigate = useNavigate();
   
   const filteredGrants = filterType === 'all' 
     ? mockGrants
@@ -45,10 +47,10 @@ const MatchedGrants: React.FC<MatchedGrantsProps> = ({ className }) => {
       </div>
 
       <div className="p-4 border-t border-gray-200 text-center">
-        <button className="text-fundsprout-primary hover:text-fundsprout-dark font-medium flex items-center justify-center space-x-2 mx-auto">
+        <Link to="/find-grants" className="text-fundsprout-primary hover:text-fundsprout-dark font-medium flex items-center justify-center space-x-2 mx-auto">
           <span>View all grant opportunities</span>
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-        </button>
+        </Link>
       </div>
     </div>
   );
@@ -59,8 +61,11 @@ interface GrantCardProps {
 }
 
 const GrantCard: React.FC<GrantCardProps> = ({ grant }) => {
+  const navigate = useNavigate();
+  
   return (
-    <div className="grant-card animate-fade-in">
+    <div className="grant-card animate-fade-in hover:shadow-md transition-shadow duration-300 cursor-pointer" 
+         onClick={() => navigate(`/grants/${grant.id}`)}>
       <div className="flex items-center justify-between mb-3">
         <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
           {/* Logo placeholder */}
@@ -118,7 +123,13 @@ const GrantCard: React.FC<GrantCardProps> = ({ grant }) => {
         <div className="text-xs text-gray-500">
           Deadline: <span className="font-medium">{new Date(grant.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
         </div>
-        <button className="text-fundsprout-primary hover:text-fundsprout-dark font-medium text-sm">
+        <button 
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent card click event from firing
+            navigate(`/grants/${grant.id}`);
+          }} 
+          className="text-fundsprout-primary hover:text-fundsprout-dark font-medium text-sm"
+        >
           View Details
         </button>
       </div>

@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { mockActivities } from '../utils/mockData';
 
 const getActivityIcon = (type: string) => {
@@ -74,7 +75,15 @@ const RecentActivity: React.FC<RecentActivityProps> = ({ className }) => {
       </div>
       <div className="p-4 max-h-[400px] overflow-auto">
         {mockActivities.map((activity) => (
-          <div key={activity.id} className="flex items-start mb-5 last:mb-0">
+          <div key={activity.id} className="flex items-start mb-5 last:mb-0 cursor-pointer hover:bg-gray-50 p-2 rounded-md transition-colors" 
+               onClick={() => {
+                 // Handle activity click based on type
+                 if (activity.type === 'application' && activity.relatedId) {
+                   window.location.href = `/applications/${activity.relatedId}`;
+                 } else if (activity.type === 'deadline' && activity.relatedId) {
+                   window.location.href = `/grants/${activity.relatedId}`;
+                 }
+               }}>
             {getActivityIcon(activity.type)}
             <div className="ml-3 flex-1">
               <p className="font-medium text-gray-900">{activity.title}</p>
@@ -93,9 +102,9 @@ const RecentActivity: React.FC<RecentActivityProps> = ({ className }) => {
         ))}
       </div>
       <div className="p-4 border-t border-gray-200 text-center">
-        <button className="text-fundsprout-primary hover:text-fundsprout-dark font-medium">
+        <Link to="/activity" className="text-fundsprout-primary hover:text-fundsprout-dark font-medium">
           View all activity
-        </button>
+        </Link>
       </div>
     </div>
   );
