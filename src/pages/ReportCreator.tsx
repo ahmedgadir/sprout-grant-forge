@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { mockGrants, mockReports } from '@/utils/mockData';
 import { useToast } from "@/components/ui/use-toast";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const ReportCreator: React.FC = () => {
   const { id } = useParams();
@@ -27,9 +28,13 @@ const ReportCreator: React.FC = () => {
   const [rfpSections, setRfpSections] = useState<string[]>([]);
   const [activeSection, setActiveSection] = useState('');
   const [sectionContents, setSectionContents] = useState<Record<string, string>>({});
-  const [showAiHelper, setShowAiHelper] = useState(false);
-  const [aiQuestion, setAiQuestion] = useState('');
+  
+  // AI interaction states
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
   const [aiResponse, setAiResponse] = useState('');
+  const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
+  const [aiHistory, setAiHistory] = useState<Array<{role: 'user' | 'ai', content: string}>>([]);
   
   // Mock RFP analysis function
   const analyzeRfp = () => {
@@ -68,37 +73,88 @@ const ReportCreator: React.FC = () => {
     }, 2000);
   };
   
-  // Function to handle AI assistance
-  const requestAiHelp = () => {
-    setShowAiHelper(true);
-    // Generate a contextual question based on the current section
-    switch(activeSection) {
+  // Function to generate AI draft for a section
+  const generateAiDraft = () => {
+    setIsGeneratingDraft(true);
+    
+    // Simulate AI generating content
+    setTimeout(() => {
+      const draftContent = generateSectionDraft(activeSection);
+      
+      // Add the AI response to the history
+      setAiHistory(prev => [...prev, {
+        role: 'ai',
+        content: `Here's my draft for the ${activeSection} section:\n\n${draftContent}`
+      }]);
+      
+      setIsGeneratingDraft(false);
+    }, 1500);
+  };
+  
+  // Function to generate draft content for a section
+  const generateSectionDraft = (section: string) => {
+    switch(section) {
       case 'Executive Summary':
-        setAiQuestion('What are the key points you want to highlight in your executive summary?');
-        break;
+        return "This project aims to address the growing need for digital literacy in underserved communities through an innovative educational program. By leveraging existing community resources and partnerships with local technology companies, we will provide hands-on training and mentorship to 200 youth and adults over a 12-month period.";
       case 'Project Background':
-        setAiQuestion('What is the problem or need your project addresses?');
-        break;
+        return "Digital literacy has become essential for economic opportunity and civic participation. However, our assessment has identified significant gaps in digital skills among residents of the Oak Heights neighborhood, where only 45% of households have reliable internet access and digital literacy training is limited.";
       case 'Goals and Objectives':
-        setAiQuestion('What are your primary goals and the measurable objectives for this project?');
-        break;
+        return "Goal 1: Increase digital literacy skills among underserved populations\n- Objective 1.1: Provide basic computer skills training to 200 community members\n- Objective 1.2: Ensure 80% of participants can demonstrate proficiency in core digital applications\n\nGoal 2: Improve access to technology resources\n- Objective 2.1: Establish 3 community technology hubs with 15 workstations each\n- Objective 2.2: Distribute 50 refurbished computers to qualifying households";
+      case 'Methodology':
+        return "Our approach combines classroom instruction, peer learning, and personalized mentorship to create a comprehensive digital literacy program. The curriculum is structured into three progressive modules: Basic Digital Skills, Intermediate Applications, and Advanced Digital Creation.";
+      case 'Budget Justification':
+        return "The requested funding of $125,000 will be allocated as follows:\n- Personnel (45%): $56,250\n- Equipment and Technology (30%): $37,500\n- Program Materials and Curriculum (15%): $18,750\n- Evaluation and Reporting (10%): $12,500";
+      case 'Timeline and Milestones':
+        return "Month 1-2: Program setup and curriculum finalization\nMonth 3-4: Recruitment and outreach\nMonth 5-10: Program implementation and ongoing evaluation\nMonth 11-12: Final evaluation, reporting, and sustainability planning";
+      case 'Expected Outcomes':
+        return "Short-term outcomes:\n- 200 participants complete at least one digital literacy module\n- 85% of participants report increased confidence using digital tools\n\nLong-term outcomes:\n- 70% of participants apply new skills for employment, education, or civic engagement\n- Three sustainable community technology hubs established";
+      case 'Evaluation Plan':
+        return "Our evaluation approach combines quantitative and qualitative methods to assess program effectiveness. Pre and post assessments will measure skill acquisition, while interviews and focus groups will capture broader impacts. Key metrics include:\n\n- Number of participants completing each program module\n- Skill proficiency levels before and after training\n- Self-reported confidence and technology usage";
       default:
-        setAiQuestion(`What would you like assistance with for the ${activeSection} section?`);
+        return "Based on the requirements in the RFP, this section should address key aspects related to the project implementation and outcomes. Please modify this draft to include specific details about your organization's approach and capabilities.";
     }
   };
   
-  // Function to handle AI response generation
-  const generateAiResponse = () => {
-    // Simulate AI generating content
+  // Submit user prompt to AI
+  const submitPrompt = () => {
+    if (!aiPrompt.trim()) return;
+    
+    // Add user message to history
+    setAiHistory(prev => [...prev, {
+      role: 'user',
+      content: aiPrompt
+    }]);
+    
+    // Clear the prompt input
+    setAiPrompt('');
+    
+    // Simulate AI response
     setTimeout(() => {
-      const responses: Record<string, string> = {
-        'Executive Summary': "This project aims to address the growing need for digital literacy in underserved communities through an innovative educational program. By leveraging existing community resources and partnerships with local technology companies, we will provide hands-on training and mentorship to 200 youth and adults over a 12-month period.",
-        'Project Background': "Digital literacy has become essential for economic opportunity and civic participation. However, our assessment has identified significant gaps in digital skills among residents of the Oak Heights neighborhood, where only 45% of households have reliable internet access and digital literacy training is limited.",
-        'Goals and Objectives': "Goal 1: Increase digital literacy skills among underserved populations\n- Objective 1.1: Provide basic computer skills training to 200 community members\n- Objective 1.2: Ensure 80% of participants can demonstrate proficiency in core digital applications\n\nGoal 2: Improve access to technology resources\n- Objective 2.1: Establish 3 community technology hubs with 15 workstations each\n- Objective 2.2: Distribute 50 refurbished computers to qualifying households"
-      };
+      const response = generateAiResponse(activeSection);
       
-      setAiResponse(responses[activeSection] || "Based on grant requirements for this section, you should address the specific metrics, methodologies, and outcomes related to your project implementation. Consider including quantitative targets, timeline information, and how your approach aligns with the funder's priorities.");
+      // Add the AI response to the history
+      setAiHistory(prev => [...prev, {
+        role: 'ai',
+        content: response
+      }]);
     }, 1500);
+  };
+  
+  // Generate mock AI response based on user input
+  const generateAiResponse = (section: string) => {
+    const responses = {
+      'Executive Summary': "I've updated the draft to highlight the innovative aspects of your program and its alignment with the funder's priorities. The executive summary now emphasizes both the immediate impacts and long-term sustainability of the project.",
+      'Project Background': "I've enhanced the project background with more statistical evidence about the digital divide in your target community. This creates a stronger case for the urgency and importance of your proposed intervention.",
+      'Goals and Objectives': "The goals and objectives section now includes more measurable outcomes and clear timelines for achievement. I've made sure each objective follows the SMART framework as requested in the RFP guidelines.",
+      'Methodology': "I've expanded the methodology section to include more details about your evidence-based approaches and how they will be implemented. Each component now clearly connects to your stated objectives.",
+      'Budget Justification': "The budget justification now provides more specific rationales for each expense category and demonstrates cost-effectiveness through comparisons to industry standards.",
+      'Timeline and Milestones': "I've refined the timeline to include more specific milestones and deliverables at each stage of the project. This demonstrates realistic planning and accountability.",
+      'Expected Outcomes': "The outcomes section now distinguishes more clearly between outputs (immediate results) and outcomes (longer-term impacts), with a stronger focus on how they address the needs identified in the RFP.",
+      'Evaluation Plan': "The evaluation plan has been enhanced with more specific metrics and a clear explanation of how findings will be used for continuous improvement throughout the project period."
+    };
+    
+    return responses[section as keyof typeof responses] || 
+      "I've analyzed your request and made adjustments to strengthen this section. The content now better aligns with the funder's priorities while maintaining your organization's unique approach. Is there any specific aspect you'd like me to focus on further?";
   };
   
   // Handle section content updates
@@ -109,11 +165,18 @@ const ReportCreator: React.FC = () => {
     });
   };
   
+  // Use AI draft in the current section
+  const useAiDraft = (draftContent: string) => {
+    updateSectionContent(draftContent.replace(/^Here's my draft for the .* section:\n\n/, ''));
+    toast({
+      title: "Draft Applied",
+      description: `AI draft applied to ${activeSection} section.`,
+    });
+  };
+  
   // Handle section navigation
   const navigateToSection = (section: string) => {
     setActiveSection(section);
-    setShowAiHelper(false);
-    setAiResponse('');
   };
   
   // Function to save the draft report
@@ -291,7 +354,7 @@ const ReportCreator: React.FC = () => {
                 </CardContent>
               </Card>
               
-              {/* Collaboration Tools */}
+              {/* Collaborators */}
               <Card>
                 <CardHeader>
                   <CardTitle>Collaborators</CardTitle>
@@ -365,12 +428,12 @@ const ReportCreator: React.FC = () => {
                       Auto-saved at {new Date().toLocaleTimeString()}
                     </div>
                     <Button 
-                      onClick={requestAiHelp}
+                      onClick={() => setAiDialogOpen(true)}
                       variant="outline"
                       className="flex items-center gap-1"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sparkles"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/></svg>
-                      Get AI Assistance
+                      Open AI Assistant
                     </Button>
                   </CardFooter>
                 </Card>
@@ -417,171 +480,185 @@ const ReportCreator: React.FC = () => {
               )}
             </div>
             
-            {/* Right sidebar - AI assistance */}
+            {/* Right sidebar - Report overview and progress */}
             <div className="lg:col-span-1">
-              {showAiHelper ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sparkles text-fundsprout-primary"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/></svg>
-                      AI Assistant
-                    </CardTitle>
-                    <CardDescription>
-                      Get help with writing your {activeSection} section
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm font-medium text-gray-700">{aiQuestion}</p>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Report Overview</CardTitle>
+                  <CardDescription>Progress on report sections</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {rfpSections.map((section, index) => {
+                    const content = sectionContents[section] || '';
+                    const progress = content.length > 0 ? Math.min(100, Math.max(10, Math.floor((content.length / 100) * 25))) : 0;
+                    
+                    return (
+                      <div key={index} className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span>{section}</span>
+                          <span>{progress}%</span>
+                        </div>
+                        <div className="h-2 w-full bg-gray-100 rounded-full">
+                          <div 
+                            className="h-full bg-fundsprout-primary rounded-full" 
+                            style={{ width: `${progress}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
+                  <div className="pt-4 border-t border-gray-100">
+                    <div className="flex justify-between text-sm font-medium">
+                      <span>Overall Completion</span>
+                      <span>
+                        {Math.floor(
+                          Object.values(sectionContents).filter(Boolean).length / rfpSections.length * 100
+                        )}%
+                      </span>
                     </div>
-                    
-                    {aiResponse ? (
-                      <div className="p-3 bg-fundsprout-light rounded-lg">
-                        <p className="text-sm text-fundsprout-dark">{aiResponse}</p>
-                        <div className="flex justify-end mt-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => {
-                              updateSectionContent((sectionContents[activeSection] || '') + '\n\n' + aiResponse);
-                              toast({
-                                title: "Content Added",
-                                description: "AI suggestion added to your section.",
-                              });
-                            }}
-                            className="text-xs"
-                          >
-                            Use Suggestion
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex justify-center">
-                        <Button onClick={generateAiResponse} className="bg-fundsprout-primary hover:bg-fundsprout-dark">
-                          Generate Suggestion
-                        </Button>
-                      </div>
-                    )}
-                    
-                    {aiResponse && (
-                      <div>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="w-full mt-2"
-                          onClick={() => {
-                            setAiResponse('');
-                            generateAiResponse();
-                          }}
-                        >
-                          Regenerate
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                  <CardFooter>
-                    <Button 
-                      variant="ghost" 
-                      className="w-full text-gray-500"
-                      onClick={() => {
-                        setShowAiHelper(false);
-                        setAiResponse('');
-                      }}
-                    >
-                      Close AI Assistant
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ) : rfpSections.length > 0 ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Report Overview</CardTitle>
-                    <CardDescription>Progress on report sections</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {rfpSections.map((section, index) => {
-                      const content = sectionContents[section] || '';
-                      const progress = content.length > 0 ? Math.min(100, Math.max(10, Math.floor((content.length / 100) * 25))) : 0;
-                      
-                      return (
-                        <div key={index} className="space-y-1">
-                          <div className="flex justify-between text-sm">
-                            <span>{section}</span>
-                            <span>{progress}%</span>
-                          </div>
-                          <div className="h-2 w-full bg-gray-100 rounded-full">
-                            <div 
-                              className="h-full bg-fundsprout-primary rounded-full" 
-                              style={{ width: `${progress}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    
-                    <div className="pt-4 border-t border-gray-100">
-                      <div className="flex justify-between text-sm font-medium">
-                        <span>Overall Completion</span>
-                        <span>
-                          {Math.floor(
-                            Object.values(sectionContents).filter(Boolean).length / rfpSections.length * 100
-                          )}%
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : null}
-              
-              {rfpSections.length > 0 && (
-                <Card className="mt-6">
-                  <CardHeader>
-                    <CardTitle>Comments & Feedback</CardTitle>
-                    <CardDescription>Team collaboration for {activeSection}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-4 max-h-80 overflow-y-auto">
-                      <div className="flex gap-3">
-                        <div className="w-8 h-8 rounded-full bg-purple-100 flex-shrink-0 flex items-center justify-center">
-                          <span className="text-sm font-medium text-purple-700">JD</span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="bg-gray-50 p-3 rounded-lg">
-                            <p className="text-sm">I think we should add more specifics about our outreach metrics from last quarter.</p>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">Jane Doe • 2 hours ago</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center">
-                          <span className="text-sm font-medium text-blue-700">RS</span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="bg-gray-50 p-3 rounded-lg">
-                            <p className="text-sm">Let's make sure our budget numbers align with what we submitted in the preliminary proposal.</p>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">Robert Smith • 1 hour ago</p>
-                        </div>
-                      </div>
-                    </div>
-                    
+                  </div>
+
+                  {rfpSections.length > 0 && (
                     <div className="pt-4">
-                      <Label htmlFor="comment" className="sr-only">Add a comment</Label>
-                      <div className="flex gap-2">
-                        <Textarea 
-                          id="comment"
-                          placeholder="Add a comment..."
-                          className="flex-1 h-16"
-                        />
-                        <Button className="bg-fundsprout-primary hover:bg-fundsprout-dark self-end">Post</Button>
+                      <Button 
+                        onClick={generateAiDraft}
+                        disabled={isGeneratingDraft}
+                        className="w-full bg-fundsprout-primary hover:bg-fundsprout-dark flex items-center justify-center gap-2"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sparkles"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/></svg>
+                        {isGeneratingDraft ? 'Generating...' : 'Generate AI Draft'}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Comments and Feedback Card */}
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle>Comments & Feedback</CardTitle>
+                  <CardDescription>Team collaboration for {activeSection}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-4 max-h-80 overflow-y-auto">
+                    <div className="flex gap-3">
+                      <div className="w-8 h-8 rounded-full bg-purple-100 flex-shrink-0 flex items-center justify-center">
+                        <span className="text-sm font-medium text-purple-700">JD</span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <p className="text-sm">I think we should add more specifics about our outreach metrics from last quarter.</p>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Jane Doe • 2 hours ago</p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                    
+                    <div className="flex gap-3">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center">
+                        <span className="text-sm font-medium text-blue-700">RS</span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <p className="text-sm">Let's make sure our budget numbers align with what we submitted in the preliminary proposal.</p>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Robert Smith • 1 hour ago</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4">
+                    <Label htmlFor="comment" className="sr-only">Add a comment</Label>
+                    <div className="flex gap-2">
+                      <Textarea 
+                        id="comment"
+                        placeholder="Add a comment..."
+                        className="flex-1 h-16"
+                      />
+                      <Button className="bg-fundsprout-primary hover:bg-fundsprout-dark self-end">Post</Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
+          
+          {/* AI Assistant Dialog */}
+          <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
+            <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sparkles text-fundsprout-primary"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/></svg>
+                  AI Writing Assistant
+                </DialogTitle>
+                <DialogDescription>
+                  Get AI assistance for your {activeSection} section
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="flex-1 overflow-y-auto py-4 space-y-4">
+                {aiHistory.length === 0 ? (
+                  <div className="text-center py-8">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-message-circle mx-auto mb-3 text-gray-400"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
+                    <p className="text-gray-500">No conversation yet. Ask the AI for help with your {activeSection} section.</p>
+                  </div>
+                ) : (
+                  aiHistory.map((message, index) => (
+                    <div key={index} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
+                      {message.role === 'ai' && (
+                        <div className="w-8 h-8 rounded-full bg-fundsprout-light flex-shrink-0 flex items-center justify-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sparkles text-fundsprout-dark"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/></svg>
+                        </div>
+                      )}
+                      
+                      <div className={`flex-1 max-w-[80%] ${message.role === 'user' ? 'order-first' : 'order-last'}`}>
+                        <div className={`p-3 rounded-lg ${message.role === 'user' ? 'bg-fundsprout-primary text-white' : 'bg-gray-100'}`}>
+                          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                        </div>
+                        {message.role === 'ai' && message.content.includes('Here\'s my draft') && (
+                          <div className="mt-2 flex justify-end">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => useAiDraft(message.content)}
+                              className="flex items-center gap-1"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check"><polyline points="20 6 9 17 4 12"/></svg>
+                              Use This Draft
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {message.role === 'user' && (
+                        <div className="w-8 h-8 rounded-full bg-fundsprout-primary flex-shrink-0 flex items-center justify-center text-white">
+                          <span className="text-sm font-medium">You</span>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+              
+              <DialogFooter className="flex-shrink-0 pt-4">
+                <div className="flex gap-2 w-full">
+                  <Textarea 
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    placeholder={`Ask for help with your ${activeSection} section...`}
+                    className="flex-1"
+                  />
+                  <Button 
+                    onClick={submitPrompt}
+                    disabled={!aiPrompt.trim()}
+                    className="bg-fundsprout-primary hover:bg-fundsprout-dark self-end"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-send"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                  </Button>
+                </div>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>
