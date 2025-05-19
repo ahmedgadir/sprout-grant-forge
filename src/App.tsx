@@ -8,6 +8,9 @@ import Index from "./pages/Index";
 import FindGrants from "./pages/FindGrants";
 import Applications from "./pages/Applications";
 import GrantDetail from "./pages/GrantDetail";
+import CalendarPage from "./pages/Calendar";
+import Organization from "./pages/Organization";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 
 // Update the document title
@@ -26,6 +29,9 @@ const App = () => (
           <Route path="/find-grants" element={<FindGrants />} />
           <Route path="/applications" element={<Applications />} />
           <Route path="/grants/:id" element={<GrantDetail />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/organization" element={<Organization />} />
+          <Route path="/reports" element={<Reports />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

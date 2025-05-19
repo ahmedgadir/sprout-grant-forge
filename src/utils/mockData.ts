@@ -42,6 +42,40 @@ export interface Organization {
   taxId: string;
 }
 
+export interface Application {
+  id: string;
+  grantId: string;
+  grantTitle: string;
+  organization: string;
+  status: 'draft' | 'submitted' | 'awarded' | 'rejected';
+  submissionDate?: string;
+  dueDate: string;
+  progress: number;
+  amount: string;
+  team: User[];
+}
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  date: string;
+  type: 'deadline' | 'meeting' | 'submission' | 'report';
+  relatedId?: string;
+  description: string;
+}
+
+export interface Report {
+  id: string;
+  title: string;
+  grantId: string;
+  grantTitle: string;
+  type: 'progress' | 'financial' | 'compliance' | 'final';
+  dueDate: string;
+  submissionDate?: string;
+  status: 'upcoming' | 'submitted' | 'approved';
+  fileUrl?: string;
+}
+
 export const mockGrants: Grant[] = [
   {
     id: '1',
@@ -247,3 +281,177 @@ export const mockDashboardStats = {
   totalFundingReceived: '$725,000',
   upcomingDeadlines: 4,
 };
+
+export const mockApplications: Application[] = [
+  {
+    id: '1',
+    grantId: '1',
+    grantTitle: 'Community Development Block Grant',
+    organization: 'U.S. Department of Housing',
+    status: 'draft',
+    dueDate: '2025-07-15',
+    progress: 35,
+    amount: '$250,000',
+    team: [mockUsers[0], mockUsers[1]]
+  },
+  {
+    id: '2',
+    grantId: '8',
+    grantTitle: 'Youth Development Initiative',
+    organization: 'Children\'s Future Fund',
+    status: 'draft',
+    dueDate: '2025-08-15',
+    progress: 68,
+    amount: '$125,000',
+    team: [mockUsers[0], mockUsers[2]]
+  },
+  {
+    id: '3',
+    grantId: '3',
+    grantTitle: 'Rural Business Development Grant',
+    organization: 'USDA Rural Development',
+    status: 'submitted',
+    submissionDate: '2025-05-15',
+    dueDate: '2025-08-01',
+    progress: 100,
+    amount: '$120,000',
+    team: [mockUsers[1]]
+  },
+  {
+    id: '4',
+    grantId: '5',
+    grantTitle: 'Community Innovation Challenge',
+    organization: 'Robertson Foundation',
+    status: 'awarded',
+    submissionDate: '2025-04-12',
+    dueDate: '2025-04-30',
+    progress: 100,
+    amount: '$175,000',
+    team: [mockUsers[0], mockUsers[1], mockUsers[2]]
+  },
+  {
+    id: '5',
+    grantId: '7',
+    grantTitle: 'Digital Literacy Program',
+    organization: 'Tech Forward Alliance',
+    status: 'rejected',
+    submissionDate: '2025-04-05',
+    dueDate: '2025-04-15',
+    progress: 100,
+    amount: '$90,000',
+    team: [mockUsers[2]]
+  }
+];
+
+export const mockCalendarEvents: CalendarEvent[] = [
+  {
+    id: '1',
+    title: 'Community Development Block Grant Deadline',
+    date: '2025-07-15',
+    type: 'deadline',
+    relatedId: '1',
+    description: 'Final submission deadline for the Community Development Block Grant application.'
+  },
+  {
+    id: '2',
+    title: 'Environmental Justice Grant Deadline',
+    date: '2025-06-22',
+    type: 'deadline',
+    relatedId: '2',
+    description: 'Final submission deadline for the Environmental Justice Small Grants Program.'
+  },
+  {
+    id: '3',
+    title: 'Team Meeting - Youth Development Initiative',
+    date: '2025-05-25',
+    type: 'meeting',
+    relatedId: '8',
+    description: 'Planning meeting to discuss application strategy for the Youth Development Initiative grant.'
+  },
+  {
+    id: '4',
+    title: 'Progress Report Due - Community Innovation',
+    date: '2025-06-15',
+    type: 'report',
+    relatedId: '5',
+    description: 'First quarterly progress report due for the Community Innovation Challenge grant.'
+  },
+  {
+    id: '5',
+    title: 'Grant Review Meeting with Board',
+    date: '2025-06-05',
+    type: 'meeting',
+    description: 'Present current grant applications and strategy to the board of directors.'
+  },
+  {
+    id: '6',
+    title: 'Submit Rural Business Development Application',
+    date: '2025-07-25',
+    type: 'submission',
+    relatedId: '3',
+    description: 'Final review and submission of the Rural Business Development Grant application.'
+  },
+  {
+    id: '7',
+    title: 'Financial Report Due',
+    date: '2025-07-30',
+    type: 'report',
+    description: 'Quarterly financial report due for all active grants.'
+  }
+];
+
+export const mockReports: Report[] = [
+  {
+    id: '1',
+    title: 'Q1 2025 Progress Report',
+    grantId: '4',
+    grantTitle: 'Arts and Humanities Grant',
+    type: 'progress',
+    dueDate: '2025-04-15',
+    submissionDate: '2025-04-10',
+    status: 'approved',
+    fileUrl: '/placeholder.svg'
+  },
+  {
+    id: '2',
+    title: 'Financial Compliance Report',
+    grantId: '5',
+    grantTitle: 'Community Innovation Challenge',
+    type: 'financial',
+    dueDate: '2025-05-30',
+    status: 'upcoming',
+    fileUrl: '/placeholder.svg'
+  },
+  {
+    id: '3',
+    title: 'Mid-Year Program Evaluation',
+    grantId: '4',
+    grantTitle: 'Arts and Humanities Grant',
+    type: 'progress',
+    dueDate: '2025-07-15',
+    status: 'upcoming',
+    fileUrl: '/placeholder.svg'
+  },
+  {
+    id: '4',
+    title: 'Annual Compliance Documentation',
+    grantId: '5',
+    grantTitle: 'Community Innovation Challenge',
+    type: 'compliance',
+    dueDate: '2025-03-31',
+    submissionDate: '2025-03-28',
+    status: 'submitted',
+    fileUrl: '/placeholder.svg'
+  },
+  {
+    id: '5',
+    title: 'Final Project Report',
+    grantId: '7',
+    grantTitle: 'Digital Literacy Program',
+    type: 'final',
+    dueDate: '2025-02-15',
+    submissionDate: '2025-02-10',
+    status: 'approved',
+    fileUrl: '/placeholder.svg'
+  }
+];
