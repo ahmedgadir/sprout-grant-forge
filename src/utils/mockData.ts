@@ -1,4 +1,3 @@
-
 export interface Grant {
   id: string;
   title: string;
@@ -19,6 +18,7 @@ export interface Activity {
   description: string;
   timestamp: string;
   user?: User;
+  relatedId?: string; // Added relatedId property to the Activity interface
 }
 
 export interface User {
@@ -150,7 +150,8 @@ export const mockActivities: Activity[] = [
       email: 'jane@example.org',
       role: 'Grant Writer',
       avatarUrl: '/placeholder.svg'
-    }
+    },
+    relatedId: '1' // Added relatedId matching to the grant ID
   },
   {
     id: '2',
@@ -164,7 +165,8 @@ export const mockActivities: Activity[] = [
       email: 'robert@example.org',
       role: 'Director',
       avatarUrl: '/placeholder.svg'
-    }
+    },
+    relatedId: '8' // Added relatedId matching to the grant ID
   },
   {
     id: '3',
@@ -172,6 +174,7 @@ export const mockActivities: Activity[] = [
     title: 'Environmental Justice Small Grants Program',
     description: 'Deadline in 5 days',
     timestamp: '2025-05-17T09:00:00Z',
+    relatedId: '2' // Added relatedId matching to the grant ID
   },
   {
     id: '4',
@@ -185,7 +188,8 @@ export const mockActivities: Activity[] = [
       email: 'jane@example.org',
       role: 'Grant Writer',
       avatarUrl: '/placeholder.svg'
-    }
+    },
+    relatedId: '3' // Added relatedId matching to the grant ID
   },
   {
     id: '5',
@@ -193,6 +197,7 @@ export const mockActivities: Activity[] = [
     title: 'Technology Innovation Fund',
     description: 'Grant awarded - $75,000',
     timestamp: '2025-05-10T11:15:00Z',
+    relatedId: '5' // Added relatedId matching to a grant ID
   }
 ];
 

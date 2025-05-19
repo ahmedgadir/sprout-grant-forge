@@ -77,10 +77,14 @@ const RecentActivity: React.FC<RecentActivityProps> = ({ className }) => {
         {mockActivities.map((activity) => (
           <div key={activity.id} className="flex items-start mb-5 last:mb-0 cursor-pointer hover:bg-gray-50 p-2 rounded-md transition-colors" 
                onClick={() => {
-                 // Handle activity click based on type
+                 // Handle activity click based on type and check if relatedId exists
                  if (activity.type === 'application' && activity.relatedId) {
                    window.location.href = `/applications/${activity.relatedId}`;
                  } else if (activity.type === 'deadline' && activity.relatedId) {
+                   window.location.href = `/grants/${activity.relatedId}`;
+                 } else if (activity.type === 'submission' && activity.relatedId) {
+                   window.location.href = `/applications/${activity.relatedId}`;
+                 } else if (activity.relatedId) {
                    window.location.href = `/grants/${activity.relatedId}`;
                  }
                }}>
