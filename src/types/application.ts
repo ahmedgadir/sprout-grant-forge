@@ -24,7 +24,7 @@ export interface ApplicationQuestion {
 
 export interface AIResponse {
   id: string;
-  sectionType?: 'text' | 'questions' | 'budget' | 'timeline' | 'upload';
+  sectionType?: string;
   keywords: string[];
   response: string;
 }
