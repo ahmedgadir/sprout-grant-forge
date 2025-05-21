@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
@@ -16,6 +15,7 @@ import { FileText, MessageCircle, Lightbulb, Check, FileQuestion } from 'lucide-
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 
 // Sample suggested RFPs
 const suggestedRfps = [
