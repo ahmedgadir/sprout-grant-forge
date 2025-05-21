@@ -12,9 +12,38 @@ import WorkspaceSidebar from '@/components/workspace/WorkspaceSidebar';
 import WorkspaceEditor from '@/components/workspace/WorkspaceEditor';
 import WorkspaceAIAssistant from '@/components/workspace/WorkspaceAIAssistant';
 import { ApplicationSection } from '@/types/application';
-import { FileText, MessageCircle, Lightbulb, Check } from 'lucide-react';
+import { FileText, MessageCircle, Lightbulb, Check, FileQuestion } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
+import { Card, CardContent } from '@/components/ui/card';
+
+// Sample suggested RFPs
+const suggestedRfps = [
+  {
+    id: 'rfp-1',
+    title: 'Community Health Initiative Grant',
+    org: 'Health Foundation',
+    deadline: '2025-06-30',
+    focus: 'Health equity and access',
+    description: 'Funding for innovative approaches to improve community health outcomes in underserved areas.'
+  },
+  {
+    id: 'rfp-2',
+    title: 'Youth Development Program',
+    org: 'Education Trust',
+    deadline: '2025-07-15',
+    focus: 'Education and mentorship',
+    description: 'Supporting programs that enhance educational opportunities and provide mentorship for at-risk youth.'
+  },
+  {
+    id: 'rfp-3',
+    title: 'Environmental Justice Fund',
+    org: 'Green Future Coalition',
+    deadline: '2025-06-10',
+    focus: 'Community environmental initiatives',
+    description: 'Projects addressing environmental challenges in disadvantaged communities with a focus on sustainable solutions.'
+  }
+];
 
 const ApplicationWorkspace: React.FC = () => {
   const { grantId } = useParams<{ grantId: string }>();
@@ -35,6 +64,14 @@ const ApplicationWorkspace: React.FC = () => {
   const [rfpQuestions, setRfpQuestions] = useState<string[]>([]);
   const [isGeneratingDraft, setIsGeneratingDraft] = useState<boolean>(false);
   const [draftGenerationProgress, setDraftGenerationProgress] = useState<number>(0);
+  const [selectedRfp, setSelectedRfp] = useState<(typeof suggestedRfps)[0] | null>(null);
+  const [userResponses, setUserResponses] = useState<{[key: string]: string}>({});
+  const [applicationQuestions, setApplicationQuestions] = useState<string[]>([
+    "What specific need does your project address?",
+    "Who is your target population?",
+    "What are your project's main objectives?",
+    "How will you measure success?"
+  ]);
   
   // Initialize with the first section active
   useEffect(() => {
@@ -76,7 +113,7 @@ const ApplicationWorkspace: React.FC = () => {
             // Show success toast
             toast({
               title: "RFP Analysis Complete",
-              description: "We've extracted 14 requirements and aligned your application with the funder priorities.",
+              description: "We've extracted key requirements and aligned your application with the funder priorities.",
             });
             
             // Don't close the dialog, let user see the questions first
@@ -155,6 +192,26 @@ const ApplicationWorkspace: React.FC = () => {
       
       'budget': "Total Project Budget: $1,250,000\n\nPersonnel: $650,000\n- Project Director (1.0 FTE): $90,000\n- Program Managers (2.0 FTE): $140,000\n- Community Health Coordinators (4.0 FTE): $280,000\n- Data Analyst (1.0 FTE): $70,000\n- Administrative Assistant (1.0 FTE): $50,000\n- Fringe Benefits (15%): $94,500\n\nOperations: $350,000\n- Hub Facilities (4 locations): $180,000\n- Equipment & Supplies: $85,000\n- Technology & Communications: $65,000\n- Transportation: $20,000\n\nProgram Activities: $175,000\n- Training Programs: $60,000\n- Community Events: $45,000\n- Educational Materials: $35,000\n- Participant Incentives: $35,000\n\nEvaluation: $75,000\n- External Evaluator: $45,000\n- Data Collection Tools: $20,000\n- Reporting & Dissemination: $10,000\n\nCost-effectiveness is achieved through leveraging existing community spaces for hubs (saving approximately $120,000 in construction costs) and our train-the-trainer model that expands reach without proportional staff increases."
     };
+    
+    // Enhance content with user responses if available
+    Object.keys(userResponses).forEach(question => {
+      const response = userResponses[question];
+      if (response && response.trim()) {
+        // Insert user responses into the appropriate sections
+        if (question.includes("need")) {
+          sectionContent['need-statement'] = response + "\n\n" + sectionContent['need-statement'];
+        } else if (question.includes("target")) {
+          sectionContent['project-summary'] = sectionContent['project-summary'].replace(
+            "underserved neighborhoods", 
+            `${response} communities`
+          );
+        } else if (question.includes("objectives")) {
+          sectionContent['goals-objectives'] = "Based on your input: " + response + "\n\n" + sectionContent['goals-objectives'];
+        } else if (question.includes("measure")) {
+          sectionContent['evaluation'] = "As you indicated, " + response + "\n\n" + sectionContent['evaluation'];
+        }
+      }
+    });
     
     setSections(prevSections =>
       prevSections.map(section => {
@@ -240,6 +297,20 @@ const ApplicationWorkspace: React.FC = () => {
   // Handle RFP upload
   const handleRfpUpload = () => {
     setIsAnalyzingRfp(true);
+  };
+
+  // Handle suggested RFP selection
+  const handleSelectRfp = (rfp: (typeof suggestedRfps)[0]) => {
+    setSelectedRfp(rfp);
+    setIsAnalyzingRfp(true);
+  };
+
+  // Handle user response to application questions
+  const handleUserResponseChange = (question: string, response: string) => {
+    setUserResponses(prev => ({
+      ...prev,
+      [question]: response
+    }));
   };
 
   // Handle AI draft generation
@@ -328,7 +399,7 @@ const ApplicationWorkspace: React.FC = () => {
               className="flex items-center space-x-2"
             >
               <FileText className="h-4 w-4" />
-              <span>Upload RFP</span>
+              <span>Select/Upload RFP</span>
             </Button>
           </div>
           
@@ -352,25 +423,64 @@ const ApplicationWorkspace: React.FC = () => {
         </div>
       </div>
       
-      {/* RFP Upload Dialog */}
+      {/* RFP Upload/Selection Dialog */}
       <Dialog open={uploadRfpDialogOpen} onOpenChange={setUploadRfpDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Upload RFP Document</DialogTitle>
+            <DialogTitle>Select or Upload RFP</DialogTitle>
             <DialogDescription>
-              Upload the Request for Proposals (RFP) document to automatically analyze requirements and improve your application.
+              Choose a suggested RFP or upload your own to automatically analyze requirements and improve your application.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="py-4 space-y-4">
+          <div className="py-4 space-y-6">
             {!rfpAnalysisComplete ? (
               <>
-                <Input 
-                  type="file" 
-                  id="rfp-document" 
-                  accept=".pdf,.doc,.docx,.txt"
-                  disabled={isAnalyzingRfp}
-                />
+                {/* Suggested RFPs */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium">Suggested RFPs</h3>
+                  <div className="grid gap-3">
+                    {suggestedRfps.map(rfp => (
+                      <Card 
+                        key={rfp.id} 
+                        className={`cursor-pointer border hover:border-fundsprout-primary transition-colors ${
+                          selectedRfp?.id === rfp.id ? 'border-fundsprout-primary bg-fundsprout-50' : ''
+                        }`}
+                        onClick={() => handleSelectRfp(rfp)}
+                      >
+                        <CardContent className="p-3">
+                          <div className="flex items-start">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-sm">{rfp.title}</h4>
+                              <p className="text-xs text-gray-600">{rfp.org} • Due: {new Date(rfp.deadline).toLocaleDateString()}</p>
+                              <p className="text-xs mt-1">{rfp.description}</p>
+                              <span className="inline-block mt-2 text-xs bg-fundsprout-50 text-fundsprout-700 px-2 py-0.5 rounded-full">{rfp.focus}</span>
+                            </div>
+                            {selectedRfp?.id === rfp.id && (
+                              <Check className="h-4 w-4 text-fundsprout-primary flex-shrink-0" />
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="flex items-center">
+                  <div className="flex-grow h-px bg-gray-200"></div>
+                  <span className="px-3 text-xs text-gray-500">OR</span>
+                  <div className="flex-grow h-px bg-gray-200"></div>
+                </div>
+                
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium">Upload Your Own RFP</h3>
+                  <Input 
+                    type="file" 
+                    id="rfp-document" 
+                    accept=".pdf,.doc,.docx,.txt"
+                    disabled={isAnalyzingRfp || selectedRfp !== null}
+                  />
+                </div>
                 
                 {isAnalyzingRfp && (
                   <div className="space-y-2">
@@ -386,7 +496,31 @@ const ApplicationWorkspace: React.FC = () => {
                 )}
               </>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-6">
+                {/* First screen after RFP analysis: Questions */}
+                {selectedRfp && !isGeneratingDraft && draftGenerationProgress === 0 && (
+                  <div className="mb-4">
+                    <h3 className="font-medium text-base mb-2">Tell us about your project for {selectedRfp.title}</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      This information will help us customize your application to better match the grant requirements.
+                    </p>
+                    
+                    <div className="space-y-4">
+                      {applicationQuestions.map((question, index) => (
+                        <div key={index}>
+                          <label className="block text-sm font-medium mb-1">{question}</label>
+                          <Textarea 
+                            value={userResponses[question] || ''}
+                            onChange={(e) => handleUserResponseChange(question, e.target.value)}
+                            placeholder="Your response..."
+                            className="w-full h-20 resize-none"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 <div className="bg-green-50 border border-green-100 rounded-md p-3">
                   <h3 className="text-green-700 font-medium flex items-center gap-1 mb-2">
                     <Check className="h-4 w-4" /> Analysis Complete
@@ -413,7 +547,7 @@ const ApplicationWorkspace: React.FC = () => {
                     </div>
                     <Progress value={draftGenerationProgress} className="h-2" />
                     <p className="text-xs text-gray-500 italic">
-                      Creating content for each section based on RFP requirements and best practices...
+                      Creating content for each section based on RFP requirements and your inputs...
                     </p>
                   </div>
                 ) : (
@@ -438,7 +572,7 @@ const ApplicationWorkspace: React.FC = () => {
                 <Button 
                   onClick={handleRfpUpload} 
                   className="bg-fundsprout-primary hover:bg-fundsprout-dark"
-                  disabled={isAnalyzingRfp}
+                  disabled={isAnalyzingRfp || (!selectedRfp && document.getElementById('rfp-document')?.getAttribute('value') === '')}
                 >
                   {isAnalyzingRfp ? "Analyzing..." : "Analyze RFP"}
                 </Button>

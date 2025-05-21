@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Check, AlertTriangle, FileText, HelpCircle, MessageCircle, Lightbulb } from 'lucide-react';
+import { Check, AlertTriangle, FileText, MessageCircle, Lightbulb } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface WorkspaceEditorProps {
@@ -24,14 +24,14 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
   const [rfpFile, setRfpFile] = useState<File | null>(null);
   const [isAnalyzingRfp, setIsAnalyzingRfp] = useState(false);
   const [rfpQuestions, setRfpQuestions] = useState<string[]>([]);
-  const [aiSuggestion, setAiSuggestion] = useState('');
+  const [userThoughts, setUserThoughts] = useState('');
   const [isGeneratingSuggestion, setIsGeneratingSuggestion] = useState(false);
   const { toast } = useToast();
   
   // Find questions for this section
   const questions = section ? mockApplicationQuestions.filter(q => q.sectionId === section.id) : [];
 
-  // Fake AI section suggestions based on the current section
+  // Generate section suggestion based on the current section
   useEffect(() => {
     if (section) {
       generateSectionSuggestion();
@@ -54,11 +54,14 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
         'evaluation': "Include both process and outcome metrics in your evaluation plan, with a clear explanation of how data will be collected."
       };
       
-      setAiSuggestion(suggestions[section.id as keyof typeof suggestions] || 
-        "Consider how this section relates to the funder's strategic priorities and make those connections explicit.");
+      const suggestion = suggestions[section.id as keyof typeof suggestions] || 
+        "Consider how this section relates to the funder's strategic priorities and make those connections explicit.";
+        
+      // Apply suggestion directly to the section
+      applyAiSuggestion(suggestion);
       
       setIsGeneratingSuggestion(false);
-    }, 1500);
+    }, 800);
   };
 
   const handleRfpUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,13 +91,13 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
     }, 2000);
   };
   
-  const applyAiSuggestion = () => {
-    if (!section || !aiSuggestion) return;
+  const applyAiSuggestion = (suggestion: string) => {
+    if (!section || !suggestion) return;
     
     // For text sections
     if (section.type === 'text') {
       const currentContent = section.content || '';
-      onChange(currentContent + (currentContent ? '\n\n' : '') + aiSuggestion);
+      onChange(currentContent + (currentContent ? '\n\n' : '') + suggestion);
     } 
     // For question sections
     else if (section.type === 'questions' && questions.length > 0) {
@@ -104,7 +107,7 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
         // Apply suggestion to the first question answer
         const updatedContent = {
           ...content,
-          [questions[0].id]: (content[questions[0].id] || '') + (content[questions[0].id] ? '\n\n' : '') + aiSuggestion
+          [questions[0].id]: (content[questions[0].id] || '') + (content[questions[0].id] ? '\n\n' : '') + suggestion
         };
         
         onChange(JSON.stringify(updatedContent));
@@ -112,7 +115,7 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
         console.error("Error parsing section content:", error);
         // If content isn't valid JSON, create a new content object
         const newContent = {
-          [questions[0].id]: aiSuggestion
+          [questions[0].id]: suggestion
         };
         onChange(JSON.stringify(newContent));
       }
@@ -121,6 +124,45 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
     toast({
       title: "Suggestion Applied",
       description: "AI suggestion has been added to your content."
+    });
+  };
+
+  // Add user thoughts to the current section
+  const addUserThoughts = () => {
+    if (!userThoughts.trim() || !section) return;
+    
+    // For text sections
+    if (section.type === 'text') {
+      const currentContent = section.content || '';
+      onChange(currentContent + (currentContent ? '\n\n' : '') + userThoughts);
+    } 
+    // For question sections
+    else if (section.type === 'questions' && questions.length > 0) {
+      try {
+        const content = section.content ? JSON.parse(section.content) : {};
+        
+        // Apply user thoughts to the first question answer
+        const updatedContent = {
+          ...content,
+          [questions[0].id]: (content[questions[0].id] || '') + (content[questions[0].id] ? '\n\n' : '') + userThoughts
+        };
+        
+        onChange(JSON.stringify(updatedContent));
+      } catch (error) {
+        console.error("Error parsing section content:", error);
+        // If content isn't valid JSON, create a new content object
+        const newContent = {
+          [questions[0].id]: userThoughts
+        };
+        onChange(JSON.stringify(newContent));
+      }
+    }
+    
+    setUserThoughts('');
+    
+    toast({
+      title: "Thoughts Added",
+      description: "Your notes have been added to the content."
     });
   };
 
@@ -205,7 +247,7 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
                 <Card className="mb-6 bg-blue-50 border-blue-100">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-blue-800 flex items-center gap-1">
-                      <HelpCircle className="h-4 w-4" /> 
+                      <FileText className="h-4 w-4" /> 
                       RFP Questions to Address
                     </CardTitle>
                   </CardHeader>
@@ -268,6 +310,26 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
                   className="min-h-[50vh] resize-y"
                 />
               )}
+              
+              {/* User Thoughts Input */}
+              <div className="mt-6">
+                <h3 className="text-sm font-medium mb-2">Add Your Thoughts</h3>
+                <div className="flex gap-2">
+                  <Textarea
+                    placeholder="Add notes, ideas, or follow-up questions..."
+                    value={userThoughts}
+                    onChange={(e) => setUserThoughts(e.target.value)}
+                    className="min-h-20 resize-y"
+                  />
+                  <Button 
+                    onClick={addUserThoughts} 
+                    className="self-end"
+                    disabled={!userThoughts.trim()}
+                  >
+                    Add
+                  </Button>
+                </div>
+              </div>
             </TabsContent>
             
             <TabsContent value="preview" className="mt-4">
@@ -350,13 +412,13 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
         </div>
       </div>
       
-      {/* AI Suggestions Panel */}
+      {/* AI Suggestions Panel - Simplified */}
       {showAiSuggestions && (
         <div className="w-80 flex flex-col bg-gray-50 overflow-hidden">
           <div className="p-3 border-b bg-white flex items-center justify-between">
             <h3 className="font-medium flex items-center gap-1">
               <Lightbulb className="h-4 w-4 text-amber-500" />
-              AI Assistant
+              AI Writing Assistant
             </h3>
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setShowAiSuggestions(false)}>
               <span className="sr-only">Close</span>
@@ -365,38 +427,57 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
           </div>
           
           <div className="flex-1 overflow-y-auto p-3 space-y-4">
+            {/* Quick Actions */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-1">
-                  <Lightbulb className="h-4 w-4 text-amber-500" /> 
-                  Section Suggestion
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  AI-generated tips for this section
-                </CardDescription>
+                <CardTitle className="text-sm">Quick Actions</CardTitle>
+                <CardDescription className="text-xs">Generate content with one click</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0">
-                {isGeneratingSuggestion ? (
-                  <div className="py-4 text-center">
-                    <p className="text-sm text-gray-500 mb-2">Generating suggestions...</p>
-                    <Progress value={65} className="h-2" />
-                  </div>
-                ) : (
-                  <p className="text-sm">{aiSuggestion}</p>
-                )}
-              </CardContent>
-              <CardFooter className="pt-0">
+              <CardContent className="pt-0 space-y-2">
                 <Button 
+                  variant="outline" 
                   size="sm" 
-                  onClick={applyAiSuggestion}
-                  disabled={isGeneratingSuggestion || !aiSuggestion}
-                  className="w-full"
+                  className="w-full justify-start text-left h-auto py-2 text-sm"
+                  onClick={() => {
+                    applyAiSuggestion("Based on the RFP requirements, our approach will focus on community engagement through participatory methods that directly involve the target population in both planning and implementation phases.");
+                  }}
                 >
-                  Apply Suggestion
+                  Generate content from RFP
                 </Button>
-              </CardFooter>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start text-left h-auto py-2 text-sm"
+                  onClick={() => {
+                    applyAiSuggestion("Our organization has successfully implemented five similar projects over the past three years, reaching over 10,000 beneficiaries and achieving measurable outcomes in line with funder expectations.");
+                  }}
+                >
+                  Add organizational background
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start text-left h-auto py-2 text-sm"
+                  onClick={() => {
+                    applyAiSuggestion("Key outcomes will include: 1) 30% increase in program participation, 2) 40% improvement in community health metrics, 3) Establishment of 5 sustainable community partnerships, and 4) Development of a replicable model for future initiatives.");
+                  }}
+                >
+                  Add expected outcomes
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start text-left h-auto py-2 text-sm"
+                  onClick={() => {
+                    applyAiSuggestion("Our evaluation plan includes both qualitative and quantitative measures, with data collection occurring at baseline, mid-point, and project conclusion to ensure comprehensive impact assessment.");
+                  }}
+                >
+                  Add evaluation approach
+                </Button>
+              </CardContent>
             </Card>
             
+            {/* AI Chat */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-1">
@@ -408,85 +489,12 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="space-y-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full justify-start text-left h-auto py-2 text-sm"
-                    onClick={() => {
-                      toast({
-                        title: "AI Response",
-                        description: "For this section, funders typically look for clear, measurable outcomes that align with their strategic priorities. Consider adding at least 3-4 specific metrics."
-                      });
-                    }}
-                  >
-                    What should I include in this section?
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full justify-start text-left h-auto py-2 text-sm"
-                    onClick={() => {
-                      toast({
-                        title: "AI Response",
-                        description: "Based on your RFP, emphasize your organization's track record with similar projects and quantify past results whenever possible."
-                      });
-                    }}
-                  >
-                    How can I strengthen my proposal?
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full justify-start text-left h-auto py-2 text-sm"
-                    onClick={() => {
-                      toast({
-                        title: "AI Response",
-                        description: "Successful applications for this funder typically include detailed evaluation plans with both process and outcome metrics."
-                      });
-                    }}
-                  >
-                    Show me examples
-                  </Button>
-                </div>
-              </CardContent>
-              <CardFooter className="pt-2">
                 <div className="w-full space-y-2">
                   <Textarea 
-                    placeholder="Ask a question..."
+                    placeholder="Ask a question about this section..."
                     className="min-h-[60px] text-sm resize-none"
                   />
-                  <Button size="sm" className="w-full">Ask AI</Button>
-                </div>
-              </CardFooter>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-1">
-                  <FileText className="h-4 w-4 text-blue-500" /> 
-                  RFP Alignment Check
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Required elements covered</span>
-                    <span className="text-sm font-medium">75%</span>
-                  </div>
-                  <Progress value={75} className="h-2" />
-                  
-                  <div className="flex items-center justify-between mt-4">
-                    <span className="text-sm">Keywords alignment</span>
-                    <span className="text-sm font-medium">60%</span>
-                  </div>
-                  <Progress value={60} className="h-2" />
-                  
-                  <div className="bg-amber-50 border border-amber-100 rounded-md p-2 mt-2">
-                    <p className="text-xs text-amber-800">
-                      <strong>Suggestion:</strong> Consider addressing the "community engagement" aspect mentioned in the RFP.
-                    </p>
-                  </div>
+                  <Button size="sm" className="w-full">Get Answer</Button>
                 </div>
               </CardContent>
             </Card>
@@ -498,7 +506,7 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
               disabled={isGeneratingSuggestion}
               className="w-full bg-fundsprout-primary hover:bg-fundsprout-dark"
             >
-              Regenerate AI Suggestions
+              {isGeneratingSuggestion ? "Generating..." : "Generate Section Content"}
             </Button>
           </div>
         </div>
