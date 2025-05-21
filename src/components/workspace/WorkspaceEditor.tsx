@@ -98,13 +98,24 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
     } 
     // For question sections
     else if (section.type === 'questions' && questions.length > 0) {
-      const content = JSON.parse(section.content || '{}');
-      // Apply suggestion to the first question answer
-      const updatedContent = {
-        ...content,
-        [questions[0].id]: (content[questions[0].id] || '') + (content[questions[0].id] ? '\n\n' : '') + aiSuggestion
-      };
-      onChange(JSON.stringify(updatedContent));
+      try {
+        const content = section.content ? JSON.parse(section.content) : {};
+        
+        // Apply suggestion to the first question answer
+        const updatedContent = {
+          ...content,
+          [questions[0].id]: (content[questions[0].id] || '') + (content[questions[0].id] ? '\n\n' : '') + aiSuggestion
+        };
+        
+        onChange(JSON.stringify(updatedContent));
+      } catch (error) {
+        console.error("Error parsing section content:", error);
+        // If content isn't valid JSON, create a new content object
+        const newContent = {
+          [questions[0].id]: aiSuggestion
+        };
+        onChange(JSON.stringify(newContent));
+      }
     }
     
     toast({
@@ -143,6 +154,19 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
       </div>
     );
   }
+  
+  // Safely parse JSON content for questions
+  const getQuestionAnswer = (questionId: string) => {
+    if (!section.content) return '';
+    
+    try {
+      const content = JSON.parse(section.content);
+      return content[questionId] || '';
+    } catch (error) {
+      console.error("Error parsing content:", error);
+      return '';
+    }
+  };
   
   return (
     <div className="flex-1 flex overflow-hidden">
@@ -209,13 +233,22 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
                       <Textarea 
                         id={`question-${question.id}`}
                         placeholder={question.placeholder || 'Enter your response here...'}
-                        value={question.answer || ''}
+                        value={getQuestionAnswer(question.id)}
                         onChange={(e) => {
-                          const updatedContent = JSON.stringify({
-                            ...JSON.parse(section.content || '{}'),
-                            [question.id]: e.target.value
-                          });
-                          onChange(updatedContent);
+                          try {
+                            const content = section.content ? JSON.parse(section.content) : {};
+                            const updatedContent = JSON.stringify({
+                              ...content,
+                              [question.id]: e.target.value
+                            });
+                            onChange(updatedContent);
+                          } catch (error) {
+                            // If the content isn't valid JSON, start fresh
+                            const newContent = {
+                              [question.id]: e.target.value
+                            };
+                            onChange(JSON.stringify(newContent));
+                          }
                         }}
                         className="min-h-32 resize-y"
                       />
@@ -244,8 +277,16 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
                 {questions.length > 0 ? (
                   <div className="space-y-6">
                     {questions.map(question => {
-                      const content = section.content ? JSON.parse(section.content) : {};
-                      const answer = content[question.id] || '';
+                      let answer = '';
+                      
+                      try {
+                        if (section.content) {
+                          const content = JSON.parse(section.content);
+                          answer = content[question.id] || '';
+                        }
+                      } catch (error) {
+                        console.error("Error parsing content in preview:", error);
+                      }
                       
                       return (
                         <div key={question.id} className="mb-6">
