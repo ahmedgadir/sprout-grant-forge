@@ -12,7 +12,7 @@ import WorkspaceSidebar from '@/components/workspace/WorkspaceSidebar';
 import WorkspaceEditor from '@/components/workspace/WorkspaceEditor';
 import WorkspaceAIAssistant from '@/components/workspace/WorkspaceAIAssistant';
 import { ApplicationSection } from '@/types/application';
-import { FileText, MessageCircle, Lightbulb } from 'lucide-react';
+import { FileText, MessageCircle, Lightbulb, Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 
