@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Discovery from "./pages/Discovery";
 import Welcome from "./pages/Welcome";
 import NotFound from "./pages/NotFound";
+import GrantDetail from "./pages/GrantDetail";
+import ApplicationWorkspace from "./pages/ApplicationWorkspace";
 
 // Update the document title
 document.title = "Fundsprout - Grant Management Solution";
@@ -28,6 +30,8 @@ const App = () => {
             <Route path="/" element={isNewUser ? <Navigate to="/welcome" /> : <Navigate to="/discovery" />} />
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/discovery" element={<Discovery />} />
+            <Route path="/grants/:id" element={<GrantDetail />} />
+            <Route path="/applications/create/:grantId" element={<ApplicationWorkspace />} />
             {/* Catch-all route for 404s */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -47,7 +47,7 @@ const MatchedGrants: React.FC<MatchedGrantsProps> = ({ className }) => {
       </div>
 
       <div className="p-4 border-t border-gray-200 text-center">
-        <Link to="/find-grants" className="text-fundsprout-primary hover:text-fundsprout-dark font-medium flex items-center justify-center space-x-2 mx-auto">
+        <Link to="/discovery" className="text-fundsprout-primary hover:text-fundsprout-dark font-medium flex items-center justify-center space-x-2 mx-auto">
           <span>View all grant opportunities</span>
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
         </Link>
@@ -123,15 +123,26 @@ const GrantCard: React.FC<GrantCardProps> = ({ grant }) => {
         <div className="text-xs text-gray-500">
           Deadline: <span className="font-medium">{new Date(grant.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
         </div>
-        <button 
-          onClick={(e) => {
-            e.stopPropagation(); // Prevent card click event from firing
-            navigate(`/grants/${grant.id}`);
-          }} 
-          className="text-fundsprout-primary hover:text-fundsprout-dark font-medium text-sm"
-        >
-          View Details
-        </button>
+        <div className="flex space-x-2">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent card click event from firing
+              navigate(`/grants/${grant.id}`);
+            }} 
+            className="text-fundsprout-primary hover:text-fundsprout-dark font-medium text-sm"
+          >
+            View Details
+          </button>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent card click event from firing
+              navigate(`/applications/create/${grant.id}`);
+            }} 
+            className="text-fundsprout-primary hover:bg-fundsprout-light/50 font-medium text-sm px-2 py-1 rounded"
+          >
+            Apply
+          </button>
+        </div>
       </div>
     </div>
   );
