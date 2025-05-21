@@ -10,8 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Check, AlertTriangle, FileText, MessageCircle, Lightbulb } from 'lucide-react';
+import { Check, AlertTriangle, FileText, MessageCircle, Lightbulb, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface WorkspaceEditorProps {
   section: ApplicationSection | undefined;
@@ -20,13 +21,13 @@ interface WorkspaceEditorProps {
 
 const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) => {
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
-  const [showAiSuggestions, setShowAiSuggestions] = useState(true);
   const [rfpFile, setRfpFile] = useState<File | null>(null);
   const [isAnalyzingRfp, setIsAnalyzingRfp] = useState(false);
   const [rfpQuestions, setRfpQuestions] = useState<string[]>([]);
   const [rfpResponses, setRfpResponses] = useState<{[question: string]: string}>({});
   const [userThoughts, setUserThoughts] = useState('');
   const [isGeneratingSuggestion, setIsGeneratingSuggestion] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState('');
   const { toast } = useToast();
   
   // Find questions for this section
@@ -170,6 +171,7 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
     // Only generate suggestion when section changes, not on initial render
     if (section) {
       setIsGeneratingSuggestion(false); // Reset to prevent auto-generation
+      setAiSuggestion(''); // Clear any previous suggestions
     }
   }, [section]);
 
@@ -192,9 +194,8 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
       const suggestion = suggestions[section.id as keyof typeof suggestions] || 
         "Consider how this section relates to the funder's strategic priorities and make those connections explicit.";
         
-      // Apply suggestion directly to the section  
-      applyAiSuggestion(suggestion);
-      
+      // Set the suggestion but don't apply it automatically
+      setAiSuggestion(suggestion);
       setIsGeneratingSuggestion(false);
     }, 800);
   };
@@ -263,11 +264,14 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
       }
     }
     
-    // Only show toast once when deliberately applying a suggestion
+    // Show toast only once
     toast({
       title: "Suggestion Applied",
       description: "AI suggestion has been added to your content."
     });
+    
+    // Clear the suggestion after applying
+    setAiSuggestion('');
   };
 
   // Add user thoughts to the current section
@@ -304,7 +308,7 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
     setUserThoughts('');
     
     toast({
-      title: "Thoughts Added",
+      title: "Notes Added",
       description: "Your notes have been added to the content."
     });
   };
@@ -354,35 +358,36 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
   };
   
   return (
-    <div className="flex-1 flex overflow-hidden">
-      {/* Main Editor Area */}
-      <div className={`flex-1 flex flex-col overflow-hidden ${showAiSuggestions ? 'border-r' : ''}`}>
-        <div className="border-b px-4 py-2">
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'edit' | 'preview')} className="w-full">
-            <div className="flex justify-between items-center mb-4">
-              <TabsList>
-                <TabsTrigger value="edit">Edit</TabsTrigger>
-                <TabsTrigger value="preview">Preview</TabsTrigger>
-              </TabsList>
-              
-              <div className="flex items-center gap-2">
-                {section.completed && (
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 flex gap-1 items-center">
-                    <Check className="h-3 w-3" /> Complete
-                  </Badge>
-                )}
-                {section.required && !section.completed && (
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 flex gap-1 items-center">
-                    <AlertTriangle className="h-3 w-3" /> Required
-                  </Badge>
-                )}
-              </div>
+    <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Header with Tabs */}
+      <div className="border-b px-4 py-2">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'edit' | 'preview')} className="w-full">
+          <div className="flex justify-between items-center mb-4">
+            <TabsList>
+              <TabsTrigger value="edit">Edit</TabsTrigger>
+              <TabsTrigger value="preview">Preview</TabsTrigger>
+            </TabsList>
+            
+            <div className="flex items-center gap-2">
+              {section.completed && (
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 flex gap-1 items-center">
+                  <Check className="h-3 w-3" /> Complete
+                </Badge>
+              )}
+              {section.required && !section.completed && (
+                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 flex gap-1 items-center">
+                  <AlertTriangle className="h-3 w-3" /> Required
+                </Badge>
+              )}
             </div>
+          </div>
 
-            <TabsContent value="edit" className="mt-4">
+          {/* Main Content Area */}
+          <TabsContent value="edit" className="mt-0 data-[state=active]:flex flex-col overflow-y-auto">
+            <div className="editor-content p-4">
               <div className="mb-6">
                 <h2 className="text-xl font-semibold mb-2">{section.title}</h2>
-                <p className="text-gray-600">{section.description}</p>
+                <p className="text-gray-600 mb-4">{section.description}</p>
               </div>
               
               {/* RFP Questions with Response Fields */}
@@ -393,6 +398,9 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
                       <FileText className="h-4 w-4" /> 
                       RFP Questions to Address
                     </CardTitle>
+                    <CardDescription className="text-xs text-blue-700">
+                      These questions were extracted from the RFP document. Your responses will be incorporated into your application.
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
@@ -412,243 +420,241 @@ const WorkspaceEditor: React.FC<WorkspaceEditorProps> = ({ section, onChange }) 
                       ))}
                     </div>
                   </CardContent>
+                  <CardFooter className="bg-blue-100 py-2 px-4">
+                    <p className="text-xs text-blue-700">
+                      Addressing these questions directly will strengthen your application's alignment with funder priorities
+                    </p>
+                  </CardFooter>
                 </Card>
               )}
               
-              {questions.length > 0 ? (
-                <div className="space-y-8">
-                  {questions.map(question => (
-                    <div key={question.id} className="editor-question-container">
-                      <label className="block mb-2 text-sm font-medium">{question.text}</label>
-                      {question.helpText && (
-                        <p className="text-xs text-gray-500 mb-2">{question.helpText}</p>
-                      )}
-                      <Textarea 
-                        id={`question-${question.id}`}
-                        placeholder={question.placeholder || 'Enter your response here...'}
-                        value={getQuestionAnswer(question.id)}
-                        onChange={(e) => {
-                          try {
-                            const content = section.content ? JSON.parse(section.content) : {};
-                            const updatedContent = JSON.stringify({
-                              ...content,
-                              [question.id]: e.target.value
-                            });
-                            onChange(updatedContent);
-                          } catch (error) {
-                            // If the content isn't valid JSON, start fresh
-                            const newContent = {
-                              [question.id]: e.target.value
-                            };
-                            onChange(JSON.stringify(newContent));
-                          }
-                        }}
-                        className="min-h-32 resize-y"
-                      />
-                      {question.wordLimit && (
-                        <div className="text-xs text-gray-500 mt-1 text-right">
-                          Word limit: {question.wordLimit}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <Textarea 
-                  placeholder="Enter your content here..."
-                  value={section.content || ''}
-                  onChange={(e) => onChange(e.target.value)}
-                  className="min-h-[50vh] resize-y"
-                />
-              )}
-              
-              {/* User Thoughts Input */}
-              <div className="mt-6">
-                <h3 className="text-sm font-medium mb-2">Add Your Thoughts</h3>
-                <div className="flex gap-2">
-                  <Textarea
-                    placeholder="Add notes, ideas, or follow-up questions..."
-                    value={userThoughts}
-                    onChange={(e) => setUserThoughts(e.target.value)}
-                    className="min-h-20 resize-y"
-                  />
-                  <Button 
-                    onClick={addUserThoughts} 
-                    className="self-end"
-                    disabled={!userThoughts.trim()}
-                  >
-                    Add
-                  </Button>
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="preview" className="mt-4">
-              <div className="bg-white p-4 border rounded-md">
-                <h2 className="text-xl font-semibold mb-4">{section.title}</h2>
-                
-                {/* Show RFP responses in preview */}
-                {rfpQuestions.length > 0 && Object.values(rfpResponses).some(r => r.trim() !== '') && (
-                  <div className="mb-6 p-3 bg-blue-50 rounded-md">
-                    <h3 className="text-md font-medium mb-2 text-blue-800">RFP Questions and Responses</h3>
-                    <div className="space-y-4">
-                      {rfpQuestions.map((question, index) => (
-                        rfpResponses[question] && rfpResponses[question].trim() !== '' && (
-                          <div key={index} className="border-b border-blue-100 pb-3 last:border-0">
-                            <h4 className="text-sm font-medium mb-1">{question}</h4>
-                            <p className="text-sm">{rfpResponses[question]}</p>
-                          </div>
-                        )
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
+              {/* Section Content */}
+              <div className="bg-white rounded-md border p-4 mb-6">
                 {questions.length > 0 ? (
-                  <div className="space-y-6">
-                    {questions.map(question => {
-                      let answer = '';
-                      
-                      try {
-                        if (section.content) {
-                          const content = JSON.parse(section.content);
-                          answer = content[question.id] || '';
-                        }
-                      } catch (error) {
-                        console.error("Error parsing content in preview:", error);
-                      }
-                      
-                      return (
-                        <div key={question.id} className="mb-6">
-                          <h3 className="text-lg font-medium mb-2">{question.text}</h3>
-                          <div className="prose max-w-none">
-                            {answer ? (
-                              <p>{answer}</p>
-                            ) : (
-                              <p className="text-gray-400 italic">No content yet</p>
-                            )}
+                  <div className="space-y-8">
+                    {questions.map(question => (
+                      <div key={question.id} className="editor-question-container">
+                        <label className="block mb-2 text-sm font-medium">{question.text}</label>
+                        {question.helpText && (
+                          <p className="text-xs text-gray-500 mb-2">{question.helpText}</p>
+                        )}
+                        <Textarea 
+                          id={`question-${question.id}`}
+                          placeholder={question.placeholder || 'Enter your response here...'}
+                          value={getQuestionAnswer(question.id)}
+                          onChange={(e) => {
+                            try {
+                              const content = section.content ? JSON.parse(section.content) : {};
+                              const updatedContent = JSON.stringify({
+                                ...content,
+                                [question.id]: e.target.value
+                              });
+                              onChange(updatedContent);
+                            } catch (error) {
+                              // If the content isn't valid JSON, start fresh
+                              const newContent = {
+                                [question.id]: e.target.value
+                              };
+                              onChange(JSON.stringify(newContent));
+                            }
+                          }}
+                          className="min-h-32 resize-y w-full"
+                        />
+                        {question.wordLimit && (
+                          <div className="text-xs text-gray-500 mt-1 text-right">
+                            Word limit: {question.wordLimit}
                           </div>
-                        </div>
-                      );
-                    })}
+                        )}
+                      </div>
+                    ))}
                   </div>
                 ) : (
-                  <div className="prose max-w-none">
-                    {section.content ? (
-                      <div>{section.content}</div>
-                    ) : (
-                      <p className="text-gray-400 italic">No content yet</p>
-                    )}
-                  </div>
+                  <Textarea 
+                    placeholder="Enter your content here..."
+                    value={section.content || ''}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="min-h-[50vh] resize-y w-full border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
                 )}
               </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-        
-        <div className="flex-1 overflow-y-auto p-6">
-          {/* The content is now managed by TabsContent above */}
-        </div>
-        
-        <div className="border-t p-4">
-          <div className="flex justify-between">
-            <div>
-              {section.required && (
-                <span className="text-xs text-red-500">* Required section</span>
+              
+              {/* AI Suggestion Banner - Only show when there's a suggestion */}
+              {aiSuggestion && (
+                <Card className="mb-6 bg-amber-50 border-amber-100">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-amber-800 flex items-center gap-1">
+                      <Lightbulb className="h-4 w-4" /> 
+                      AI Suggestion
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-2">
+                    <p className="text-sm text-amber-700">{aiSuggestion}</p>
+                  </CardContent>
+                  <CardFooter className="pt-2 flex justify-end gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="text-amber-700 border-amber-200 hover:bg-amber-100"
+                      onClick={() => setAiSuggestion('')}
+                    >
+                      Dismiss
+                    </Button>
+                    <Button 
+                      size="sm"
+                      className="bg-amber-500 hover:bg-amber-600 text-white"
+                      onClick={() => applyAiSuggestion(aiSuggestion)}
+                    >
+                      Apply Suggestion
+                    </Button>
+                  </CardFooter>
+                </Card>
+              )}
+              
+              {/* Bottom Action Bar */}
+              <div className="flex flex-wrap gap-2 justify-between items-center">
+                {/* Quick Actions - Inline Popover */}
+                <div className="flex gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="flex items-center gap-1">
+                        <Plus className="h-3 w-3" /> Quick Actions
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 p-0" align="start">
+                      <div className="p-3 border-b">
+                        <h4 className="text-sm font-medium">
+                          {section.title} Quick Actions
+                        </h4>
+                        <p className="text-xs text-gray-500">
+                          Add section-specific content
+                        </p>
+                      </div>
+                      <div className="max-h-80 overflow-y-auto">
+                        <div className="grid gap-1 p-2">
+                          {getSectionActions().map((action, index) => (
+                            <Button 
+                              key={index}
+                              variant="ghost" 
+                              size="sm" 
+                              className="justify-start text-left h-auto py-2 text-sm normal-case"
+                              onClick={() => {
+                                applyAiSuggestion(action.content);
+                              }}
+                            >
+                              {action.title}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1"
+                    onClick={generateSectionSuggestion}
+                    disabled={isGeneratingSuggestion}
+                  >
+                    <Lightbulb className="h-3 w-3" />
+                    {isGeneratingSuggestion ? "Generating..." : "Get Suggestion"}
+                  </Button>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  {/* Add notes inline */}
+                  <div className="flex">
+                    <Input
+                      placeholder="Add notes, ideas, or questions..."
+                      value={userThoughts}
+                      onChange={(e) => setUserThoughts(e.target.value)}
+                      className="rounded-r-none border-r-0 w-44 sm:w-64 h-8 text-xs"
+                    />
+                    <Button 
+                      onClick={addUserThoughts}
+                      disabled={!userThoughts.trim()}
+                      className="h-8 px-2 rounded-l-none"
+                      size="sm"
+                    >
+                      Add
+                    </Button>
+                  </div>
+                  
+                  <Button
+                    onClick={() => section.toggleCompletion && section.toggleCompletion()}
+                    variant={section.completed ? "default" : "outline"}
+                    size="sm"
+                    className={section.completed ? "bg-fundsprout-primary hover:bg-fundsprout-dark" : ""}
+                  >
+                    {section.completed ? "Completed" : "Mark as Complete"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="preview" className="data-[state=active]:flex flex-col overflow-y-auto p-4">
+            <div className="bg-white p-6 border rounded-md shadow-sm">
+              <h2 className="text-xl font-semibold mb-4">{section.title}</h2>
+              
+              {/* Show RFP responses in preview */}
+              {rfpQuestions.length > 0 && Object.values(rfpResponses).some(r => r.trim() !== '') && (
+                <div className="mb-6 p-4 bg-blue-50 rounded-md">
+                  <h3 className="text-md font-medium mb-3 text-blue-800">RFP Questions and Responses</h3>
+                  <div className="space-y-4">
+                    {rfpQuestions.map((question, index) => (
+                      rfpResponses[question] && rfpResponses[question].trim() !== '' && (
+                        <div key={index} className="border-b border-blue-100 pb-3 last:border-0">
+                          <h4 className="text-sm font-medium mb-1">{question}</h4>
+                          <p className="text-sm whitespace-pre-wrap">{rfpResponses[question]}</p>
+                        </div>
+                      )
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {questions.length > 0 ? (
+                <div className="space-y-6">
+                  {questions.map(question => {
+                    let answer = '';
+                    
+                    try {
+                      if (section.content) {
+                        const content = JSON.parse(section.content);
+                        answer = content[question.id] || '';
+                      }
+                    } catch (error) {
+                      console.error("Error parsing content in preview:", error);
+                    }
+                    
+                    return (
+                      <div key={question.id} className="mb-6">
+                        <h3 className="text-lg font-medium mb-2">{question.text}</h3>
+                        <div className="prose max-w-none">
+                          {answer ? (
+                            <p className="whitespace-pre-wrap">{answer}</p>
+                          ) : (
+                            <p className="text-gray-400 italic">No content yet</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="prose max-w-none">
+                  {section.content ? (
+                    <div className="whitespace-pre-wrap">{section.content}</div>
+                  ) : (
+                    <p className="text-gray-400 italic">No content yet</p>
+                  )}
+                </div>
               )}
             </div>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex items-center gap-1"
-                onClick={() => setShowAiSuggestions(!showAiSuggestions)}
-              >
-                <Lightbulb className="h-4 w-4" />
-                {showAiSuggestions ? "Hide AI" : "Show AI"}
-              </Button>
-              <Button
-                onClick={() => section.toggleCompletion && section.toggleCompletion()}
-                variant={section.completed ? "default" : "outline"}
-                size="sm"
-                className={section.completed ? "bg-fundsprout-primary hover:bg-fundsprout-dark" : ""}
-              >
-                {section.completed ? "Completed" : "Mark as Complete"}
-              </Button>
-            </div>
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
-      
-      {/* AI Suggestions Panel - Simplified */}
-      {showAiSuggestions && (
-        <div className="w-80 flex flex-col bg-gray-50 overflow-hidden">
-          <div className="p-3 border-b bg-white flex items-center justify-between">
-            <h3 className="font-medium flex items-center gap-1">
-              <Lightbulb className="h-4 w-4 text-amber-500" />
-              AI Writing Assistant
-            </h3>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setShowAiSuggestions(false)}>
-              <span className="sr-only">Close</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-            </Button>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto p-3 space-y-4">
-            {/* Section-specific Actions */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Quick Actions</CardTitle>
-                <CardDescription className="text-xs">Add content for {section.title.toLowerCase()}</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-2">
-                {getSectionActions().map((action, index) => (
-                  <Button 
-                    key={index}
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full justify-start text-left h-auto py-2 text-sm"
-                    onClick={() => {
-                      applyAiSuggestion(action.content);
-                    }}
-                  >
-                    {action.title}
-                  </Button>
-                ))}
-              </CardContent>
-            </Card>
-            
-            {/* AI Chat - Simplified */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-1">
-                  <MessageCircle className="h-4 w-4 text-green-500" /> 
-                  Ask AI
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="w-full space-y-2">
-                  <Textarea 
-                    placeholder={`Ask how to improve your ${section.title.toLowerCase()}...`}
-                    className="min-h-[60px] text-sm resize-none"
-                  />
-                  <Button size="sm" className="w-full">Get Answer</Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          <div className="border-t p-3 bg-white">
-            <Button 
-              onClick={generateSectionSuggestion} 
-              disabled={isGeneratingSuggestion}
-              className="w-full bg-fundsprout-primary hover:bg-fundsprout-dark"
-            >
-              {isGeneratingSuggestion ? "Generating..." : "Generate Section Content"}
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

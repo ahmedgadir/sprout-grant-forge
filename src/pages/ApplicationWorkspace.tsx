@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
@@ -16,6 +17,8 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 // Sample suggested RFPs
 const suggestedRfps = [
@@ -318,6 +321,13 @@ const ApplicationWorkspace: React.FC = () => {
     setIsGeneratingDraft(true);
   };
 
+  // Calculate completion percentage
+  const calculateCompletion = () => {
+    const completedSections = sections.filter(s => s.completed).length;
+    const totalSections = sections.length;
+    return Math.round((completedSections / totalSections) * 100);
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-white">
       {/* Main Sidebar */}
@@ -336,6 +346,19 @@ const ApplicationWorkspace: React.FC = () => {
           onSubmit={handleSubmitApplication}
           saving={saving}
         />
+        
+        {/* Progress Bar */}
+        <div className="px-4 py-2 bg-gray-50 border-b">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-gray-600">
+              Application Progress
+            </span>
+            <span className="text-xs font-medium text-gray-600">
+              {calculateCompletion()}% Complete
+            </span>
+          </div>
+          <Progress value={calculateCompletion()} className="h-1.5" />
+        </div>
         
         {/* Workspace Content */}
         <div className="flex flex-1 overflow-hidden">
@@ -382,28 +405,94 @@ const ApplicationWorkspace: React.FC = () => {
         </div>
         
         {/* Bottom Action Bar */}
-        <div className="p-3 border-t flex justify-between items-center">
+        <div className="p-3 border-t flex justify-between items-center bg-white">
           <div className="flex space-x-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setAiAssistantOpen(!aiAssistantOpen)}
-              className="flex items-center space-x-2"
-            >
-              <Lightbulb className="h-4 w-4" />
-              <span>{aiAssistantOpen ? "Hide AI Assistant" : "AI Assistant"}</span>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant={aiAssistantOpen ? "secondary" : "outline"} 
+                  onClick={() => setAiAssistantOpen(!aiAssistantOpen)}
+                  className="flex items-center space-x-2"
+                >
+                  <Lightbulb className="h-4 w-4" />
+                  <span>{aiAssistantOpen ? "Hide AI Assistant" : "AI Assistant"}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Get AI help with your application
+              </TooltipContent>
+            </Tooltip>
             
-            <Button 
-              variant="outline"
-              onClick={() => setUploadRfpDialogOpen(true)}
-              className="flex items-center space-x-2"
-            >
-              <FileText className="h-4 w-4" />
-              <span>Select/Upload RFP</span>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline"
+                  onClick={() => setUploadRfpDialogOpen(true)}
+                  className="flex items-center space-x-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  <span>RFP Info</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                View or modify RFP selection
+              </TooltipContent>
+            </Tooltip>
           </div>
           
           <div className="flex space-x-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="flex items-center gap-1"
+                >
+                  <Check className="h-4 w-4" />
+                  <span>View Progress</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="end">
+                <div className="p-3 border-b">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium">Application Progress</h4>
+                    <span className="text-sm font-medium text-fundsprout-primary">
+                      {calculateCompletion()}%
+                    </span>
+                  </div>
+                  <Progress value={calculateCompletion()} className="h-2 mt-2" />
+                </div>
+                <div className="p-3 max-h-80 overflow-y-auto">
+                  <div className="space-y-3">
+                    {sections.map((section) => (
+                      <div 
+                        key={section.id} 
+                        className="flex items-center justify-between text-sm"
+                        onClick={() => setActiveSectionId(section.id)}
+                      >
+                        <div className="flex items-center space-x-2 cursor-pointer">
+                          {section.completed ? (
+                            <div className="h-4 w-4 rounded-full bg-fundsprout-primary flex items-center justify-center">
+                              <Check className="h-3 w-3 text-white" />
+                            </div>
+                          ) : (
+                            <div className="h-4 w-4 rounded-full border border-gray-300" />
+                          )}
+                          <span className={section.completed ? "font-medium" : "text-gray-600"}>
+                            {section.title}
+                          </span>
+                        </div>
+                        {section.required && !section.completed && (
+                          <Badge variant="outline" className="text-xs bg-amber-50 text-amber-600">
+                            Required
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+            
             <Button 
               variant="outline" 
               onClick={handleSaveProgress}
@@ -425,15 +514,15 @@ const ApplicationWorkspace: React.FC = () => {
       
       {/* RFP Upload/Selection Dialog */}
       <Dialog open={uploadRfpDialogOpen} onOpenChange={setUploadRfpDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[600px] p-0 gap-0">
+          <DialogHeader className="p-4 pb-2">
             <DialogTitle>Select or Upload RFP</DialogTitle>
             <DialogDescription>
               Choose a suggested RFP or upload your own to automatically analyze requirements and improve your application.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="py-4 space-y-6">
+          <div className="max-h-[70vh] overflow-y-auto px-4 py-2">
             {!rfpAnalysisComplete ? (
               <>
                 {/* Suggested RFPs */}
@@ -466,7 +555,7 @@ const ApplicationWorkspace: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="flex items-center">
+                <div className="flex items-center my-4">
                   <div className="flex-grow h-px bg-gray-200"></div>
                   <span className="px-3 text-xs text-gray-500">OR</span>
                   <div className="flex-grow h-px bg-gray-200"></div>
@@ -483,7 +572,7 @@ const ApplicationWorkspace: React.FC = () => {
                 </div>
                 
                 {isAnalyzingRfp && (
-                  <div className="space-y-2">
+                  <div className="space-y-2 mt-4 p-3 bg-gray-50 rounded-md">
                     <div className="flex justify-between text-sm">
                       <span>Analyzing RFP document...</span>
                       <span>{rfpAnalysisProgress}%</span>
@@ -540,7 +629,7 @@ const ApplicationWorkspace: React.FC = () => {
                 </div>
                 
                 {isGeneratingDraft ? (
-                  <div className="space-y-2">
+                  <div className="space-y-2 mt-4 p-3 bg-gray-50 rounded-md">
                     <div className="flex justify-between text-sm">
                       <span>Generating AI draft...</span>
                       <span>{draftGenerationProgress}%</span>
@@ -553,7 +642,7 @@ const ApplicationWorkspace: React.FC = () => {
                 ) : (
                   <Button 
                     onClick={handleGenerateAIDraft}
-                    className="w-full bg-fundsprout-primary hover:bg-fundsprout-dark flex items-center justify-center gap-2"
+                    className="w-full bg-fundsprout-primary hover:bg-fundsprout-dark flex items-center justify-center gap-2 mt-4"
                   >
                     <Lightbulb className="h-4 w-4" />
                     Generate First AI-Powered Draft
@@ -563,7 +652,7 @@ const ApplicationWorkspace: React.FC = () => {
             )}
           </div>
           
-          <DialogFooter>
+          <DialogFooter className="p-4 pt-2 border-t">
             {!rfpAnalysisComplete ? (
               <>
                 <Button variant="outline" onClick={() => setUploadRfpDialogOpen(false)} disabled={isAnalyzingRfp}>
